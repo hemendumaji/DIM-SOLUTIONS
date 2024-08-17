@@ -1,0 +1,102 @@
+Step 1: Understand the Script
+The provided script does the following:
+
+Encrypt Function:
+
+Converts each character in the input string to its ASCII value.
+Adds a clock value (which changes with each character) to the ASCII value.
+Converts the result back to a string and encodes the entire output as base64.
+Decrypt Function:
+
+Decodes the base64 string back to ASCII values.
+Subtracts the clock value from each ASCII value to retrieve the original characters.
+Step 2: Test the Script
+Given the example in the screenshot, the script works as intended. Here is how you can recreate this process and understand each part.
+
+Step 3: Run the Script
+Create the Script:
+
+Copy the script provided and save it to a file, e.g., penguincipher.sh.
+Make the script executable with:
+bash
+Copy code
+chmod +x penguincipher.sh
+Encrypt a Message:
+
+Run the script with a message:
+bash
+Copy code
+./penguincipher.sh "The Far Side Gallery returns!"
+This will output an encrypted string.
+Decrypt the Message:
+
+Run the script with the --decode flag:
+bash
+Copy code
+./penguincipher.sh --decode "YourEncryptedStringHere"
+Replace YourEncryptedStringHere with the actual encrypted string from the previous step.
+This should output the original message: "The Far Side Gallery returns!"
+Step 4: Walk Through the Script
+Here is a breakdown of each section of the script:
+
+Set Clock:
+
+The setClock function calculates a clock value that changes with each character based on the length of the message. This ensures that each character is altered differently.
+bash
+Copy code
+setClock() {
+  MESSAGE_LENGTH="$1"
+  CLOCK_INTERVAL=$(echo "$MESSAGE_LENGTH"*4 | bc -l)
+  MAX_CLOCK_VALUE=$(echo "$MESSAGE_LENGTH"*25 | bc -l)
+  CLOCK_VALUE=$(($CLOCK_INTERVAL + $CLOCK_VALUE))
+  if [[ $CLOCK_VALUE -gt $MAX_CLOCK_VALUE ]]; then
+    CLOCK_VALUE=$(($CLOCK_VALUE - $MAX_CLOCK_VALUE))
+  fi
+}
+Encrypt:
+
+Converts each character into its ASCII code, adds the clock value, and then converts it back to a string.
+The result is encoded in base64 for easy handling.
+bash
+Copy code
+encrypt() {
+  TO_ENCRYPT="$1"
+  ENCRYPTED_MESSAGE=""
+  for (( i=0; i<"${#TO_ENCRYPT}"; i++ )); do
+    setClock "${#TO_ENCRYPT}"
+    CHAR="${TO_ENCRYPT:$i:1}"
+    LC_CTYPE=C BYTE=$(printf "%d" "'$CHAR")
+    ENCRYPTED_MESSAGE+="$(($BYTE + $CLOCK_VALUE)) "
+  done
+  RESULT=$(echo -n "$ENCRYPTED_MESSAGE" | base64 -w 0)
+  echo "$RESULT"
+}
+Decrypt:
+
+Reverses the encryption by subtracting the clock value from each ASCII code and converting it back to characters.
+bash
+Copy code
+decrypt() {
+  TO_DECRYPT=$(echo -n "$1" | base64 --decode)
+  DECRYPTED_MESSAGE=""
+  for OBFUSCATED_BYTE in $TO_DECRYPT; do
+    setClock "$(echo "$TO_DECRYPT" | wc -w)"
+    BYTE="$(($OBFUSCATED_BYTE - $CLOCK_VALUE))"
+    printf "\x$(printf %x $BYTE)"
+  done
+}
+Main Execution:
+
+Checks if the script is being run to encrypt or decrypt based on the --decode flag.
+bash
+Copy code
+if [[ "$1" == "--decode" ]]; then
+  decrypt "$2"
+else
+  encrypt "'$1'"
+fi
+Step 5: Summary of the Process
+Create the Script: Save the provided Bash code to a file.
+Make it Executable: Use chmod +x to make it executable.
+Encrypt a Message: Run the script with a message to encrypt.
+Decrypt the Message: Use the --decode flag with the encrypted output to retrieve the original message.
